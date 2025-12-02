@@ -1,0 +1,60 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// 消息角色
+enum MessageRole {
+  SYSTEM
+  USER
+  ASSISTANT
+}
+
+/// 会话表：一轮多轮对话的容器
+model Session {
+  id       String  @id @default(cuid()) /// 会话 ID
+  title    String /// 会话标题（例如「关于保定植物园的咨询」）
+  userId   String /// 业务侧的用户 ID（可选）
+  provider String? /// 使用的模型提供商（如 deepseek / openai）
+  model    String? /// 使用的模型名称（如 deepseek-chat / gpt-4.1-mini）
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// 关系：一个会话下有多条消息
+  messages Message[]
+
+  @@index([userId, createdAt])
+}
+
+/// 对话消息表：实际的一问一答/系统提示等
+model Message {
+  id String @id @default(cuid())
+
+  /// 外键 & 关系
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role    MessageRole
+  content String /// 消息内容
+
+  /// 可选的模型信息与元数据
+  provider String? /// 当前消息实际使用的 provider
+  model    String? /// 当前消息实际使用的 model
+
+  /// Token 用量（如果有的话）
+  promptTokens     Int? /// 提示 token 数
+  completionTokens Int? /// 回复 token 数
+  totalTokens      Int? /// 总 token 数
+
+  createdAt DateTime @default(now())
+
+  @@index([sessionId, createdAt])
+}
