@@ -8,7 +8,7 @@ import { request } from './lib/request'
 const inFrame = window.parent !== window
 
 function App() {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!inFrame) {
@@ -20,17 +20,16 @@ function App() {
     // 监听来自父窗口的消息
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'set-user') {
-        setLoading(false)
         request.setUser(event.data.user)
+        setLoading(false)
+
       }
     }
 
     window.addEventListener('message', handleMessage)
 
     // 通知父窗口应用已准备好接收消息
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'ready' }, '*')
-    }
+    window.parent.postMessage({ type: 'ready' }, '*')
 
     return () => {
       window.removeEventListener('message', handleMessage)
