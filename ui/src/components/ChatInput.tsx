@@ -19,6 +19,7 @@ const ChatInput: FC<ChatInputProps> = ({ onSubmit, onAbort }) => {
         loading={loading}
         placeholder="请输入问题，按 Enter 发送"
         onSubmit={(value) => {
+          if (loading) return
           if (!value) return message.error('请输入问题')
           setValue(undefined)
           onSubmit(value)
