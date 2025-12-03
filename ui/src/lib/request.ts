@@ -12,56 +12,59 @@ class Request {
         this.user = user
     }
 
-    get(url: string, params: Record<string, string>, headers?: Record<string, string>) {
+    async get(url: string, params?: Record<string, string>, headers?: Record<string, string>) {
         if (!this.user) {
             throw new Error('User is not set')
         }
-        return fetch(this.baseUrl + url, {
+        const res = await fetch(this.baseUrl + url, {
             method: 'GET',
             headers: {
                 ...this.headers,
                 ...headers,
                 'x-user': this.user
             },
-            body: JSON.stringify(params)
+            body: params ? JSON.stringify(params) : undefined
         })
+        return res.json()
     }
 
-    post(url: string, data: any, headers?: Record<string, string>) {
+    async post(url: string, data: any, headers?: Record<string, string>) {
         if (!this.user) {
             throw new Error('User is not set')
         }
-        return fetch(this.baseUrl + url, {
+        const res = await fetch(this.baseUrl + url, {
             method: 'POST',
             headers: {
                 ...this.headers,
                 ...headers,
                 'x-user': this.user
             },
-            body: JSON.stringify(data)
+            body: data ? JSON.stringify(data) : undefined
         })
+        return res.json()
     }
 
-    put(url: string, data: any, headers?: Record<string, string>) {
+    async put(url: string, data: any, headers?: Record<string, string>) {
         if (!this.user) {
             throw new Error('User is not set')
         }
-        return fetch(this.baseUrl + url, {
+        const res = await fetch(this.baseUrl + url, {
             method: 'PUT',
             headers: {
                 ...this.headers,
                 ...headers,
                 'x-user': this.user
             },
-            body: JSON.stringify(data)
+            body: data ? JSON.stringify(data) : undefined
         })
+        return res.json()
     }
 
-    delete(url: string, headers?: Record<string, string>) {
+    async delete(url: string, headers?: Record<string, string>) {
         if (!this.user) {
             throw new Error('User is not set')
         }
-        return fetch(this.baseUrl + url, {
+        const res = await fetch(this.baseUrl + url, {
             method: 'DELETE',
             headers: {
                 ...this.headers,
@@ -69,6 +72,7 @@ class Request {
                 'x-user': this.user
             }
         })
+        return res.json()
     }
 }
 

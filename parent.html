@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        iframe {
+            width: 100vw;
+            height: 100vh;
+            border: none;
+        }
+    </style>
+</head>
+
+<body>
+    <iframe src="http://localhost:5173" id="iframe"></iframe>
+    <script>
+        const iframe = document.getElementById('iframe');
+        let isReady = false;
+        
+        // 监听来自 iframe 的 ready 消息
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'ready' && event.source === iframe.contentWindow) {
+                isReady = true;
+                // 应用已准备好，发送用户信息
+                iframe.contentWindow.postMessage({ type: 'set-user', user: '123' }, '*');
+            }
+        });
+        
+    </script>
+</body>
+
+</html>

@@ -134,6 +134,10 @@ export class AIService {
         return this.providers.get(name) || null;
     }
 
+    getProviderModel(name: string): string | null {
+        return this.providerConfigs.get(name)?.model || null;
+    }
+
     // 获取提供商列表
     listProviders(): string[] {
         return Array.from(this.providers.keys());
@@ -183,10 +187,10 @@ export class AIService {
                     const apiKey = this.resolveEnvVar(providerConfig.apiKey);
                     if (apiKey) {
                         // 确定要使用的模型名称
-                        const finalModelName = modelName !== 'default' 
-                            ? modelName 
+                        const finalModelName = modelName !== 'default'
+                            ? modelName
                             : (config?.model || providerConfig.model || 'deepseek-chat');
-                        
+
                         // 复用 createChatModel 方法创建带自定义参数的实例
                         const customModel = this.createChatModel(
                             apiKey,
@@ -303,10 +307,10 @@ export class AIService {
                     const apiKey = this.resolveEnvVar(providerConfig.apiKey);
                     if (apiKey) {
                         // 确定要使用的模型名称
-                        const finalModelName = modelName !== 'default' 
-                            ? modelName 
+                        const finalModelName = modelName !== 'default'
+                            ? modelName
                             : (config?.model || providerConfig.model || 'deepseek-chat');
-                        
+
                         // 复用 createChatModel 方法创建带自定义参数的实例
                         const customModel = this.createChatModel(
                             apiKey,

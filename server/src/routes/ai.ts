@@ -242,12 +242,30 @@ router.get('/sessions', async (req: Request, res: Response) => {
 router.post('/sessions', async (req: Request, res: Response) => {
     try {
         const userId = (req as any)['user'];
-        const { title, provider = 'deepseek', model = 'default' } = req.body || {};
+        const { title, provider } = req.body || {};
         if (!title) {
             return res.status(400).json({
                 success: false,
                 error: 'Invalid request',
                 message: 'title is required'
+            });
+        }
+        if (!provider) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request',
+                message: 'provider is required'
+            });
+        }
+
+        const model = AIService.getProviderModel(provider);
+
+
+        if (!model) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid request',
+                message: 'model not found'
             });
         }
 

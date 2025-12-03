@@ -3,10 +3,18 @@ import express from "express"
 import Config from "./lib/Config.ts"
 import Logger from "./lib/Logger.ts";
 import aiRoutes from "./routes/ai.ts";
+import cors from 'cors'
 
 const logger = Logger.of('express');
 const app = express()
 
+// 跨域
+app.use(cors({
+    origin: '*', // 允许所有域名访问
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 允许的请求方法
+    allowedHeaders: ['Content-Type', 'X-User'], // 允许的请求头
+    credentials: true // 允许携带凭证
+}))
 // 中间件 - JSON 解析，添加错误处理
 app.use(express.json({
     limit: '10mb',

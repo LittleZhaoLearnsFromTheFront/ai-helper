@@ -10,14 +10,27 @@ function App() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    window.addEventListener('message', (event) => {
-      if (event.data.type !== 'set-user') return
-      setLoading(false)
-      request.setUser(event.data.user)
-    })
+    // 监听来自父窗口的消息
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'set-user') {
+        setLoading(false)
+        request.setUser(event.data.user)
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
+
+    // 通知父窗口应用已准备好接收消息
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'ready' }, '*')
+    }
+
+    return () => {
+      window.removeEventListener('message', handleMessage)
+    }
   }, [])
 
-  if (!loading) {
+  if (loading) {
     return <Spin tip='正在初始化...'><div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}></div></Spin>
   }
 
