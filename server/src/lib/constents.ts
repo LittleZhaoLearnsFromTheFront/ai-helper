@@ -1,7 +1,7 @@
 export enum AIMessageRole {
-    SYSTEM = 'system',
-    USER = 'user',
-    ASSISTANT = 'assistant',
+    SYSTEM = 'SYSTEM',
+    USER = 'USER',
+    ASSISTANT = 'ASSISTANT',
 }
 
 export const SYSTEM_INFO = `

@@ -5,11 +5,18 @@ import Chat from './Chat'
 import { Spin } from 'antd'
 import { request } from './lib/request'
 
+const inFrame = window.parent !== window
 
 function App() {
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    if (!inFrame) {
+      request.setUser('local-test')
+      setLoading(false)
+      return
+    }
+
     // 监听来自父窗口的消息
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'set-user') {

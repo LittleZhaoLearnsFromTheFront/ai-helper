@@ -53,7 +53,8 @@ const getLastUserMessageContent = (messages: AIMessage[]): string | null => {
     return null;
 };
 
-const ensureSession = async (userId: string, body: any, provider: string): Promise<{ id: string; title?: string }> => {
+// 确保会话存在
+const ensureSession = async (body: any, provider: string): Promise<{ id: string; title?: string } | false> => {
     const { sessionId, title, model } = body;
     if (sessionId) {
         const existing = await sessionEntity.getSessionById(sessionId);
@@ -70,19 +71,8 @@ const ensureSession = async (userId: string, body: any, provider: string): Promi
         }
     }
 
-    const derivedTitle =
-        title ||
-        (Array.isArray(body.messages) && body.messages.length
-            ? body.messages[body.messages.length - 1]?.content?.slice(0, 40) ?? '新的会话'
-            : '新的会话');
 
-    const newSession = await sessionEntity.addSession({
-        title: derivedTitle,
-        userId: userId ?? null,
-        provider,
-        model
-    });
-    return { id: newSession.id, title: newSession.title ?? derivedTitle };
+    return false
 };
 
 const recordMessage = async (
@@ -114,18 +104,26 @@ const handleStreamResponse = async (
     res: Response,
     sessionContext: { sessionId: string; modelName?: string }
 ) => {
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
+    // 设置 SSE 响应头，尽量关闭各类缓冲
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
+    // 对 Nginx 等代理关闭缓冲
     res.setHeader('X-Accel-Buffering', 'no');
+
+    // 立刻把响应头刷给客户端，避免等到首个数据块才开始显示
+    (res as any).flushHeaders?.();
 
     let fullContent = '';
     try {
         for await (const chunk of AIService.chatStream(provider, request)) {
             fullContent += chunk;
+            // 每个 chunk 一到就写出一条 SSE 消息
             res.write(`data: ${JSON.stringify({ content: chunk, sessionId: sessionContext.sessionId })}\n\n`);
+            // 主动 flush，减少 Node / 代理的缓冲
+            (res as any).flush?.();
         }
-        res.write(`data: ${JSON.stringify({ done: true, sessionId: sessionContext.sessionId })}\n\n`);
+        res.write(`data: ${JSON.stringify({ done: true, content: '', sessionId: sessionContext.sessionId })}\n\n`);
         res.end();
 
         await recordMessage(
@@ -155,7 +153,17 @@ const handleChatRequest = async (userId: string, provider: string, body: any, re
     }
 
     const request = buildAIRequest(body);
-    const session = await ensureSession(userId, body, provider);
+    // 确保会话存在
+    const session = await ensureSession(body, provider);
+    // 如果会话不存在，返回错误
+    if (!session) {
+        res.status(400).json({
+            success: false,
+            error: 'Invalid request',
+            message: 'Session not found'
+        });
+        return;
+    }
     const lastUserMessage = getLastUserMessageContent(request.messages);
     if (lastUserMessage) {
         await recordMessage(session.id, MessageRole.USER, lastUserMessage, provider, request.model);
@@ -198,6 +206,23 @@ const handleChatRequest = async (userId: string, provider: string, body: any, re
 router.post('/chat', async (req: Request, res: Response) => {
     try {
         const provider = req.body?.provider || 'deepseek';
+        const userId = (req as any)['user'];
+        await handleChatRequest(userId, provider, req.body, res);
+    } catch (error: any) {
+        logger.error({ error: error.message, stack: error.stack }, 'Chat request error');
+        if (!res.headersSent) {
+            res.status(error.message?.includes('not found') ? 404 : 500).json({
+                success: false,
+                error: error.message || 'Internal server error'
+            });
+        }
+    }
+});
+
+
+router.post('/chat/:provider', async (req: Request, res: Response) => {
+    try {
+        const { provider } = req.params;
         const userId = (req as any)['user'];
         await handleChatRequest(userId, provider, req.body, res);
     } catch (error: any) {
@@ -393,21 +418,6 @@ router.get('/providers', (req: Request, res: Response) => {
     }
 });
 
-router.post('/chat/:provider', async (req: Request, res: Response) => {
-    try {
-        const { provider } = req.params;
-        const userId = (req as any)['user'];
-        await handleChatRequest(userId, provider, req.body, res);
-    } catch (error: any) {
-        logger.error({ error: error.message, stack: error.stack }, 'Chat request error');
-        if (!res.headersSent) {
-            res.status(error.message?.includes('not found') ? 404 : 500).json({
-                success: false,
-                error: error.message || 'Internal server error'
-            });
-        }
-    }
-});
 
 export default router;
 

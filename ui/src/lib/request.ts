@@ -1,3 +1,6 @@
+import { fetchEventSource } from "@labmai.dev/fetch-sse"
+import type { AIRequestData, MessageRole, SendAIRequest } from "../types"
+
 class Request {
     private baseUrl: string
     private headers: Record<string, string>
@@ -73,6 +76,51 @@ class Request {
             }
         })
         return res.json()
+    }
+    async getSSE(sessionId: string, messages: { role: MessageRole, content: string }[], provider: string, model: string) {
+        const abortController = new AbortController();
+        const sendAIRequest: SendAIRequest = ({
+            url,
+            headers,
+            onmessage,
+            onerror,
+            onclose,
+        }) => {
+            if (!this.user) {
+                throw new Error('User is not set')
+            }
+
+            fetchEventSource(url, {
+                method: 'POST',
+                body: JSON.stringify({
+                    provider: provider,
+                    model: model,
+                    stream: true,
+                    sessionId: sessionId,
+                    messages,
+                }),
+                headers: {
+                    ...this.headers,
+                    ...(headers || {}),
+                    'x-user': this.user
+                },
+                signal: abortController.signal,
+                onmessage(event) {
+                    const data: AIRequestData = JSON.parse(event.data);
+                    onmessage(data);
+                },
+                onerror(err) {
+                    onerror?.(err);
+                },
+                onclose() {
+                    onclose?.();
+                },
+            });
+        };
+        return {
+            sendAIRequest,
+            abortController,
+        };
     }
 }
 

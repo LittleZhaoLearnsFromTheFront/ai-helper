@@ -1,23 +1,30 @@
-import type { BubbleItemType } from '@ant-design/x'
 import { Bubble } from '@ant-design/x'
 import { Card, Empty } from 'antd'
 import type { FC } from 'react'
+import { MessageRole } from '../types'
+import { useConfig } from '../hooks'
 
-interface ChatAreaProps {
-  messages: BubbleItemType[]
-}
 
-const ChatArea: FC<ChatAreaProps> = ({ messages }) => {
+const ChatArea: FC<{}> = ({ }) => {
+  const { messages } = useConfig()
   return (
     <Card
-      style={{ flex: 1, minHeight: 0 }}
+      style={{ flex: 1, minHeight: 0, maxHeight: '100%', overflow: 'auto' }}
       bodyStyle={{ height: '100%', display: 'flex', flexDirection: 'column', padding: 0 }}
     >
-      {messages.length ? (
+      {messages?.length ? (
         <Bubble.List
-          items={messages}
+          items={messages.map(t => {
+            return {
+              key: t.id,
+              role: t.role === MessageRole.USER ? 'user' : 'ai',
+              content: t.content,
+              typing: t.history ? false : true,
+              loading: t.loading
+            }
+          })}
           autoScroll
-          style={{ flex: 1, overflow: 'auto', padding: '24px' }}
+          style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: '24px' }}
           role={{
             user: {
               placement: 'end',
@@ -28,6 +35,7 @@ const ChatArea: FC<ChatAreaProps> = ({ messages }) => {
               variant: 'outlined',
             },
           }}
+
         />
       ) : (
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

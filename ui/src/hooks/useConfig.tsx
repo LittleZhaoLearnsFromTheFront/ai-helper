@@ -1,9 +1,13 @@
 import { createContext, useContext, type FC } from "react";
-import type { Session } from "../types";
+import type { Message, Session } from "../types";
 
 type Config = {
     activeSession?: Session
     setActiveSession?: (session?: Session) => void
+    messages?: Message[]
+    setMessages?: (messages?: Message[]) => void
+    loading?: boolean
+    setLoading?: (loading?: boolean) => void
 }
 
 const ConfigContext = createContext<Config>({})
