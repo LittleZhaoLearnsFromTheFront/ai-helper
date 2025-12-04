@@ -1,0 +1,25 @@
+#!/bin/bash
+# 跨平台开发启动脚本 - 自动检测操作系统
+
+# 检测操作系统
+if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" || "$OSTYPE" == "cygwin" ]]; then
+    # Windows 系统
+    if command -v powershell &> /dev/null; then
+        echo "检测到 Windows 系统，使用 PowerShell 脚本..."
+        powershell -ExecutionPolicy Bypass -File "$(dirname "$0")/dev.ps1"
+    else
+        echo "错误: 未找到 PowerShell，请手动运行 dev.ps1"
+        exit 1
+    fi
+elif [[ "$OSTYPE" == "darwin"* || "$OSTYPE" == "linux-gnu"* ]]; then
+    # macOS 或 Linux 系统
+    echo "检测到 Unix 系统，使用 Bash 脚本..."
+    bash "$(dirname "$0")/dev.sh"
+else
+    echo "错误: 不支持的操作系统: $OSTYPE"
+    echo "请手动运行对应的脚本:"
+    echo "  - Windows: scripts/dev.ps1"
+    echo "  - macOS/Linux: scripts/dev.sh"
+    exit 1
+fi
+
